@@ -25,71 +25,19 @@ for(commod_idx in 1:length(commod_names_c)){
              year>=2009 
     )
   # only counties with pigs ----------------------------
-  dat_op <- dat %>% filter(year<2023) %>% 
-    filter(!is.nan(plant.anom) & !is.na(plant.anom) & 
-             !is.na(GEOID) & year>=2009 &
-             (pig.last.year==1 | pig.in.year==1 )#& long>=-112
-    )%>% 
-    distinct() 
+  dat_op  <- clean_crop_dat(dat_orig=dat_orig,commod_name = commod_names[commod_idx], only_pigs = T)
   
-  pig_cov <- "take.hog.intens" 
+  dat_clean_op <- dat_op $dat_clean
+  covsx_op  <- dat_op $covsx
+  xmat <- dat_op$xmat
+  reg_count_idx <- dat_op$reg_count_idx
   
-  covs_op <- data.frame(
-    cov=c("plant.anom",
-          "GEOID",
-          "division_grp",
-          # "pig.last.year.sc",
-          "temp5trend.sc",
-          "precip5trend.sc",
-          "reg.roi5trend.sc",
-          "plant.anom.nb.sc",
-          "plant.anom.prev.sc",
-          # "take5trend.sc",
-          "take.hog.intens.sc",
-          "prop.nfsp.sc",
-          "crp.prop.sc"
-    ),
-    name=c("Planting anomaly",
-           "County",
-           "Ecoregion",
-           # "Pig presence previous year",
-           "Temperature 5 yr trend",
-           "Precipitation 5 yr trend",
-           "ROI 5 yr trend",
-           "Neighboring planting anomaly",
-           "Previous year's planting anomaly",
-           # "Take 5 yr trend",
-           "Take per hog intensity",
-           "Prop. of county with pigs",
-           "Prop. CRP land"
-    ))
-  pig_cov_name <- covs_op$name[which(covs_op$cov==paste0(pig_cov,".sc"))]
-  
-  covsx_op <- covs_op[-(1:3),]
-  
-  dat_clean_op <- na.omit(dat_op[,covs_op$cov])
-  dat_clean_op$county_idx <- as.numeric(factor(dat_clean_op$GEOID))
-  dat_clean_op$region_idx <- as.numeric(factor(dat_clean_op$division_grp))
-  
-  reg_count_idx <- dat_clean_op %>% group_by(county_idx) %>% 
-    summarise(reg_count_idx=unique(region_idx)) %>% 
-    arrange(county_idx)
-  
-  xmat <- dat_clean_op[,covsx_op$cov]
-  xmat <- sapply(xmat,as.numeric)
-  
-  if(pig_cov=="ever.pigs" | pig_cov=="nfsp.level" | pig_cov=="hog.intensity"){
-    tidx <- which(covsx_op$cov=="take5trend.sc")
-    xmat <- xmat[,-tidx]
-    covsx_op <- covsx_op[-tidx,]
-  }
- 
-  #correlation check 
-  x_cor<- cor(xmat)
-  x_cor_idx <- as.data.frame(which(abs(x_cor)>0.7 &x_cor!=1,arr.ind = T))
-  x_cor_idx[,1] <- covsx_op$cov[x_cor_idx[,1]]
-  x_cor_idx[,2] <- covsx_op$cov[x_cor_idx[,2]]
-  x_cor_idx
+  # #correlation check 
+  # x_cor<- cor(xmat)
+  # x_cor_idx <- as.data.frame(which(abs(x_cor)>0.7 &x_cor!=1,arr.ind = T))
+  # x_cor_idx[,1] <- covsx_op$cov[x_cor_idx[,1]]
+  # x_cor_idx[,2] <- covsx_op$cov[x_cor_idx[,2]]
+  # x_cor_idx
  
   nimbleMod <- nimbleCode({
     tau ~ dgamma(1,1)

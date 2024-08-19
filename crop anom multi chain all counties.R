@@ -17,81 +17,19 @@ commod_names_t <- str_to_title(commod_names_c)
 commod_names <- tolower(commod_names_c)
 
 for(commod_idx in 1:length(commod_names_c)){
-  dat <- dat_orig %>% 
-    filter(commodity_desc==commod_names_c[commod_idx]) %>% 
-    filter(!is.nan(plant.anom) & 
-             !is.na(plant.anom) & 
-             !is.na(GEOID) & 
-             year>=2009 
-    )
-  pig_cov <- "take.hog.intens" 
+  dat <- clean_crop_dat(dat_orig=dat_orig,commod_name = commod_names[commod_idx], only_pigs = F)
   
-  covs_all <- data.frame(
-    cov=c("plant.anom",
-          "GEOID",
-          "division_grp",
-          # "pig.last.year.sc",
-          "temp5trend.sc",
-          "precip5trend.sc",
-          "reg.roi5trend.sc",
-          "plant.anom.nb.sc",
-          "plant.anom.prev.sc",
-          # "take5trend.sc",
-          "take.hog.intens.sc",
-          "prop.nfsp.sc",
-          "crp.prop.sc"
-    ),
-    name=c("Planting anomaly",
-           "County",
-           "Ecoregion",
-           # "Pig presence previous year",
-           "Temperature 5 yr trend",
-           "Precipitation 5 yr trend",
-           "ROI 5 yr trend",
-           "Neighboring planting anomaly",
-           "Previous year's planting anomaly",
-           # "Take 5 yr trend",
-           "Take per hog intensity",
-           "Prop. of county with pigs",
-           "Prop. CRP land"
-    ))
-  pig_cov_name <- covs_all$name[which(covs_all$cov==paste0(pig_cov,".sc"))]
+  dat_clean <- dat$dat_clean
+  covsx  <- dat$covsx
+  xmat <- dat$xmat
+  reg_count_idx <- dat$reg_count_idx
   
-  covsx_all <- covs_all[-(1:3),]
-  
-  dat_clean <- na.omit(dat[,covs_all$cov])
-  dat_clean$county_idx <- as.numeric(factor(dat_clean$GEOID))
-  dat_clean$region_idx <- as.numeric(factor(dat_clean$division_grp))
-  
-  reg_count_idx <- dat_clean %>% group_by(county_idx) %>% 
-    summarise(reg_count_idx=unique(region_idx)) %>% 
-    arrange(county_idx)
-  
-  xmat <- dat_clean[,covsx_all$cov]
-  xmat <- sapply(xmat,as.numeric)
-  # xmat <- cbind(xmat,xmat[,which(covsx_all$cov=="crp.prop.sc")]*
-  #                 xmat[,which(covsx_all$cov==paste0(pig_cov,".sc"))])
-  # xmat <- cbind(xmat,xmat[,which(covsx_all$cov=="take5trend.sc")]*
-  #                 xmat[,which(covsx_all$cov==paste0(pig_cov,".sc"))])
-  
-  if(pig_cov=="ever.pigs" | pig_cov=="nfsp.level" | pig_cov=="hog.intensity"){
-    tidx <- which(covsx_all$cov=="take5trend.sc")
-    xmat <- xmat[,-tidx]
-    covsx_all <- covsx_all[-tidx,]
-  }
-  
-  # covsx_all <- rbind(covsx_all,
-  #                    data.frame(cov=paste0(c("crp",
-  #                                            "taketrend"),paste0("X",pig_cov)),
-  #                               name=paste(c("CRP",
-  #                                            "Take trend"),paste("X",pig_cov_name))))
-  
-  #correlation check 
-  x_cor<- cor(xmat)
-  x_cor_idx <- as.data.frame(which(abs(x_cor)>0.7 &x_cor!=1,arr.ind = T))
-  x_cor_idx[,1] <- covsx_all$cov[x_cor_idx[,1]]
-  x_cor_idx[,2] <- covsx_all$cov[x_cor_idx[,2]]
-  x_cor_idx
+  # #correlation check 
+  # x_cor<- cor(xmat)
+  # x_cor_idx <- as.data.frame(which(abs(x_cor)>0.7 &x_cor!=1,arr.ind = T))
+  # x_cor_idx[,1] <- covsx_all$cov[x_cor_idx[,1]]
+  # x_cor_idx[,2] <- covsx_all$cov[x_cor_idx[,2]]
+  # x_cor_idx
   
   # hist(1/rgamma(10000,1,1))#sd
   ##model setup ----------------------------
