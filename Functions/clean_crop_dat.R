@@ -62,6 +62,12 @@ clean_crop_dat <- function(dat_orig, #original data, uncleaned
   
   covsx_all <- covs_all[-(1:3),]
   
+  # if(pig_cov=="ever.pigs" | pig_cov=="nfsp.level" | pig_cov=="hog.intensity"){
+  #   tidx <- which(covsx_all$cov=="take5trend.sc")
+  #   xmat <- xmat[,-tidx]
+  #   covsx_all <- covsx_all[-tidx,]
+  # }
+  
   dat_clean <- na.omit(dat[,covs_all$cov])
   dat_clean$county_idx <- as.numeric(factor(dat_clean$GEOID))
   dat_clean$region_idx <- as.numeric(factor(dat_clean$division_grp))
@@ -69,12 +75,21 @@ clean_crop_dat <- function(dat_orig, #original data, uncleaned
   xmat <- dat_clean[,covsx_all$cov]
   xmat <- sapply(xmat,as.numeric)
   
-  # if(pig_cov=="ever.pigs" | pig_cov=="nfsp.level" | pig_cov=="hog.intensity"){
-  #   tidx <- which(covsx_all$cov=="take5trend.sc")
-  #   xmat <- xmat[,-tidx]
-  #   covsx_all <- covsx_all[-tidx,]
-  # }
+  covsx_all <- covs_all[-(1:3),]
+  
+  dat_clean <- na.omit(dat_op[,covs_all$cov])
+  dat_clean$county_idx <- as.numeric(factor(dat_clean$GEOID))
+  dat_clean$region_idx <- as.numeric(factor(dat_clean$division_grp))
+  
+  reg_count_idx <- dat_clean %>% group_by(county_idx) %>% 
+    summarise(reg_count_idx=unique(region_idx)) %>% 
+    arrange(county_idx)
+  
+  xmat <- dat_clean[,covsx_all$cov]
+  xmat <- sapply(xmat,as.numeric)
   
   return(list(dat_clean=dat_clean,
-         covsx=covsx_all))
+         covsx=covsx_all,
+         xmat=xmat,
+         reg_count_idx=reg_count_idx))
 }
