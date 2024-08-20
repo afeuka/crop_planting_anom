@@ -49,7 +49,7 @@ for(commod_idx in 1:length(commod_names_c)){
     scale_fill_discrete(name="",labels=c("Post pred",
                                          "Data"))+
     ggtitle(paste(commod_names_t[commod_idx]," - Posterior predictions"))
-  ggsave(filename=paste0("./Model outputs/Plots/",commod_names_t[commod_idx],"_data_post_dist.jpeg"),
+  ggsave(filename=paste0("./Model outputs/Plots/",commod_names_t[commod_idx],"/data_post_dist.jpeg"),
          device="jpeg",height=5,width=7,units="in")
 
   ##simulated model stats --------------------
