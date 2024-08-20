@@ -8,6 +8,8 @@ library(tidyverse)
 
 setwd("C:/Users/Abigail.Feuka/OneDrive - USDA/Feral Hogs/Crops")
 
+source("./crop_planting_anom/Functions/clean_crop_dat.R")
+
 #all counties-------------
 load("./Data/all_crops_anom_scaled_2023_2009_anom.RData")
 dat_orig <- dat
@@ -17,18 +19,11 @@ commod_names_t <- str_to_title(commod_names_c)
 commod_names <- tolower(commod_names_c)
 
 for(commod_idx in 1:length(commod_names_c)){
-  dat <- dat_orig %>% 
-    filter(commodity_desc==commod_names_c[commod_idx]) %>% 
-    filter(!is.nan(plant.anom) & 
-             !is.na(plant.anom) & 
-             !is.na(GEOID) & 
-             year>=2009 
-    )
   # only counties with pigs ----------------------------
   dat_op  <- clean_crop_dat(dat_orig=dat_orig,commod_name = commod_names[commod_idx], only_pigs = T)
-  
-  dat_clean_op <- dat_op $dat_clean
-  covsx_op  <- dat_op $covsx
+
+  dat_clean_op <- dat_op$dat_clean
+  covsx_op  <- dat_op$covsx
   xmat <- dat_op$xmat
   reg_count_idx <- dat_op$reg_count_idx
   

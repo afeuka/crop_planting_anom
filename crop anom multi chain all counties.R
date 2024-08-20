@@ -8,6 +8,8 @@ library(tidyverse)
 
 setwd("C:/Users/Abigail.Feuka/OneDrive - USDA/Feral Hogs/Crops")
 
+source("./crop_planting_anom/Functions/clean_crop_dat.R")
+
 #all counties-------------
 load("./Data/all_crops_anom_scaled_2023_2009_anom.RData")
 dat_orig <- dat
