@@ -11,22 +11,19 @@ clean_crop_dat <- function(dat_orig, #original data, uncleaned
                            ){
   require(tidyverse)
   
-  
   dat <- dat_orig %>% 
+    filter(year<2023 & year >=2009) %>% 
     filter(commodity_desc==toupper(commod_name)) %>% 
     filter(!is.nan(plant.anom) & 
              !is.na(plant.anom) & 
-             !is.na(GEOID) & 
-             year>=2009 
-    )
+             !is.na(GEOID) & year>=2009) %>% 
+    distinct() 
   
   if(only_pigs){
-    dat <- dat %>% filter(year<2023) %>% 
-      filter(!is.nan(plant.anom) & !is.na(plant.anom) & 
-               !is.na(GEOID) & year>=2009 &
-               (pig.last.year==1 | pig.in.year==1 )#& long>=-112
-      )%>% 
-      distinct() 
+    dat <- dat %>% filter(!is.nan(plant.anom) & 
+                            !is.na(plant.anom) & 
+                            !is.na(GEOID)  &
+                            pig.last.year==1) 
   }
 
   covs_all <- data.frame(
@@ -77,7 +74,7 @@ clean_crop_dat <- function(dat_orig, #original data, uncleaned
   
   covsx_all <- covs_all[-(1:3),]
   
-  dat_clean <- na.omit(dat_op[,covs_all$cov])
+  dat_clean <- na.omit(dat_clean[,covs_all$cov])
   dat_clean$county_idx <- as.numeric(factor(dat_clean$GEOID))
   dat_clean$region_idx <- as.numeric(factor(dat_clean$division_grp))
   
