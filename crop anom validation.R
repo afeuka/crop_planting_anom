@@ -8,77 +8,24 @@ library(tidyverse)
 
 setwd("C:/Users/Abigail.Feuka/OneDrive - USDA/Feral Hogs/Crops")
 
+source("./crop_planting_anom/Functions/clean_crop_dat.R")
+
 load("./Data/all_crops_anom_scaled_2023_2009_anom.RData")
 dat_orig <- dat
 
 commod_names_c <- unique(dat_orig$commodity_desc)
 commod_names_t <- str_to_title(commod_names_c)
 commod_names <- tolower(commod_names_c)
-commod_idx <- 1
+# commod_idx <- 1
 
 for(commod_idx in 1:length(commod_names_c)){
   # all counties-------------
   ## load samples -----------------
   load(paste0("./Model outputs/",commod_names[commod_idx],"_region_rs_multi.RData"))
   
-  dat <- dat_orig %>% 
-    filter(commodity_desc==commod_names_c[commod_idx]) %>% 
-    filter(!is.nan(plant.anom) & 
-             !is.na(plant.anom) & 
-             !is.na(GEOID) & 
-             year>=2009 
-    )
-  pig_cov <- "take.hog.intens" 
+  dat <- clean_crop_dat(dat_orig=dat_orig,commod_name = commod_names[commod_idx], only_pigs = F)
   
-  covs_all <- data.frame(
-    cov=c("plant.anom",
-          "GEOID",
-          "division_grp",
-          # "pig.last.year.sc",
-          "temp5trend.sc",
-          "precip5trend.sc",
-          "reg.roi5trend.sc",
-          "plant.anom.nb.sc",
-          "plant.anom.prev.sc",
-          # "take5trend.sc",
-          "take.hog.intens.sc",
-          "prop.nfsp.sc",
-          "crp.prop.sc"
-    ),
-    name=c("Planting anomaly",
-           "County",
-           "Ecoregion",
-           # "Pig presence previous year",
-           "Temperature 5 yr trend",
-           "Precipitation 5 yr trend",
-           "ROI 5 yr trend",
-           "Neighboring planting anomaly",
-           "Previous year's planting anomaly",
-           # "Take 5 yr trend",
-           "Take per hog intensity",
-           "Prop. of county with pigs",
-           "Prop. CRP land"
-    ))
-  pig_cov_name <- covs_all$name[which(covs_all$cov==paste0(pig_cov,".sc"))]
-  
-  covsx_all <- covs_all[-(1:3),]
-  
-  dat_clean <- na.omit(dat[,covs_all$cov])
-  dat_clean$county_idx <- as.numeric(factor(dat_clean$GEOID))
-  dat_clean$region_idx <- as.numeric(factor(dat_clean$division_grp))
-  
-  reg_count_idx <- dat_clean %>% group_by(county_idx) %>% 
-    summarise(reg_count_idx=unique(region_idx)) %>% 
-    arrange(county_idx)
-  
-  xmat <- dat_clean[,covsx_all$cov]
-  xmat <- sapply(xmat,as.numeric)
-  
-  if(pig_cov=="ever.pigs" | pig_cov=="nfsp.level" | pig_cov=="hog.intensity"){
-    tidx <- which(covsx_all$cov=="take5trend.sc")
-    xmat <- xmat[,-tidx]
-    covsx_all <- covsx_all[-tidx,]
-  }
+  dat_clean <- dat$dat_clean
   
   ##model checks ---------------------
   ypred <- samples_all[,grep("ypred",colnames(samples_all))]
@@ -92,7 +39,7 @@ for(commod_idx in 1:length(commod_names_c)){
   
   ypred_sum = cbind(ypred_sum,dat_clean)
   ypred_sum <- ypred_sum %>%
-    left_join(dat %>% dplyr::select(GEOID,lat,long) %>% distinct())
+    left_join(dat_clean %>% dplyr::select(GEOID) %>% distinct())
   
   ###posterior predictive distribution ----------------
   ggplot(ypred_sum %>% pivot_longer(cols=c("mn","obs"),
@@ -165,64 +112,9 @@ for(commod_idx in 1:length(commod_names_c)){
   load(paste0("./Model outputs/",commod_names[commod_idx],"_op_region_rs_multi.RData"))
   
   ## load data------------
-  dat_op <- dat %>% filter(year<2023) %>% 
-    filter(!is.nan(plant.anom) & !is.na(plant.anom) & 
-             !is.na(GEOID) & year>=2009 &
-             (pig.last.year==1 | pig.in.year==1 )#& long>=-112
-    )%>% 
-    distinct() 
+  dat_op  <- clean_crop_dat(dat_orig=dat_orig,commod_name = commod_names[commod_idx], only_pigs = T)
   
-  pig_cov <- "take.hog.intens" 
-  
-  covs_op <- data.frame(
-    cov=c("plant.anom",
-          "GEOID",
-          "division_grp",
-          # "pig.last.year.sc",
-          "temp5trend.sc",
-          "precip5trend.sc",
-          "reg.roi5trend.sc",
-          "plant.anom.nb.sc",
-          "plant.anom.prev.sc",
-          # "take5trend.sc",
-          "take.hog.intens.sc",
-          "prop.nfsp.sc",
-          "crp.prop.sc"
-    ),
-    name=c("Planting anomaly",
-           "County",
-           "Ecoregion",
-           # "Pig presence previous year",
-           "Temperature 5 yr trend",
-           "Precipitation 5 yr trend",
-           "ROI 5 yr trend",
-           "Neighboring planting anomaly",
-           "Previous year's planting anomaly",
-           # "Take 5 yr trend",
-           "Take per hog intensity",
-           "Prop. of county with pigs",
-           "Prop. CRP land"
-    ))
-  pig_cov_name <- covs_op$name[which(covs_op$cov==paste0(pig_cov,".sc"))]
-  
-  covsx_op <- covs_op[-(1:3),]
-  
-  dat_clean_op <- na.omit(dat_op[,covs_op$cov])
-  dat_clean_op$county_idx <- as.numeric(factor(dat_clean_op$GEOID))
-  dat_clean_op$region_idx <- as.numeric(factor(dat_clean_op$division_grp))
-  
-  reg_count_idx <- dat_clean_op %>% group_by(county_idx) %>% 
-    summarise(reg_count_idx=unique(region_idx)) %>% 
-    arrange(county_idx)
-  
-  xmat <- dat_clean_op[,covsx_op$cov]
-  xmat <- sapply(xmat,as.numeric)
-  
-  if(pig_cov=="ever.pigs" | pig_cov=="nfsp.level" | pig_cov=="hog.intensity"){
-    tidx <- which(covsx_op$cov=="take5trend.sc")
-    xmat <- xmat[,-tidx]
-    covsx_op <- covsx_op[-tidx,]
-  }
+  dat_clean_op <- dat_op$dat_clean
   
   ##model checks ---------------------
   ypred <- samples_all[,grep("ypred",colnames(samples_all))]
@@ -236,7 +128,7 @@ for(commod_idx in 1:length(commod_names_c)){
   
   ypred_sum = cbind(ypred_sum,dat_clean_op)
   ypred_sum <- ypred_sum %>%
-    left_join(dat %>% dplyr::select(GEOID,lat,long) %>% distinct())
+    left_join(dat_clean_op %>% dplyr::select(GEOID) %>% distinct())
   
   ###posterior predictive distribution ----------------
   ggplot(ypred_sum %>% pivot_longer(cols=c("mn","obs"),

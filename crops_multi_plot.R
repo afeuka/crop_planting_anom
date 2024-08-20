@@ -91,7 +91,7 @@ for(commod_idx in 1:length(commod_names_c)){
 
   ypred_sum = cbind(ypred_sum,dat_clean)
   ypred_sum <- ypred_sum %>%
-    left_join(dat %>% dplyr::select(GEOID,lat,long) %>% distinct())
+    left_join(dat_clean %>% dplyr::select(GEOID) %>% distinct())
 
   ###posterior predictive distribution ----------------
   ggplot(ypred_sum %>% pivot_longer(cols=c("mn","obs"),
