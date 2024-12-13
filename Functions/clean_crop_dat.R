@@ -6,6 +6,8 @@
 
 clean_crop_dat <- function(dat_orig, #original data, uncleaned
                            commod_name, #lower case commodity/crop name ("corn","wheat",etc)
+                           nb=T,
+                           temporal=T,
                            only_pigs=F #logical, only include counties with pigs
                            # pig.cov #column name of covariate used for pig inference
                            ){
@@ -34,10 +36,11 @@ clean_crop_dat <- function(dat_orig, #original data, uncleaned
           "temp5trend.sc",
           "precip5trend.sc",
           "reg.roi5trend.sc",
-          "plant.anom.nb.sc",
-          "plant.anom.prev.sc",
+          if(nb){"plant.anom.nb.sc"},
+          if(temporal){"plant.anom.prev.sc"},
           # "take5trend.sc",
-          "take.hog.intens.sc",
+          # "take.hog.intens.prev.sc",
+          "take.hog.intens.5yeartrend.sc",
           "prop.nfsp.sc",
           "crp.prop.sc"
     ),
@@ -48,10 +51,11 @@ clean_crop_dat <- function(dat_orig, #original data, uncleaned
            "Temperature 5 yr trend",
            "Precipitation 5 yr trend",
            "ROI 5 yr trend",
-           "Neighboring planting anomaly",
-           "Previous year's planting anomaly",
+           if(nb){"Neighboring planting anomaly"},
+           if(temporal){"Previous year's planting anomaly"},
            # "Take 5 yr trend",
-           "Take per hog intensity",
+           # "Take per hog intensity previous year",
+           "Take per hog intensity 5 yr trend",
            "Prop. of county with pigs",
            "Prop. CRP land"
     ))
