@@ -15,16 +15,16 @@ nb=FALSE
 temporal=TRUE
 mod_typ <- "spatial"
 
-if("take.hog.intens.5yeartrend.sc"%in%colnames(dat_orig)){
+if("take.hog.intens.5yeartrend.sc"%in%colnames(dat_orig) & mod_typ!="spatial"){
   subfolder <- "Take Trend"
-} else if("take.hog.intens.prev.sc"%in%colnames(dat_orig)) {
+} else if("take.hog.intens.prev.sc"%in%colnames(dat_orig)& mod_typ!="spatial") {
   subfolder <- "Take Previous"
 } else if (mod_typ=="spatial") {
   subfolder <- "Spatial" 
 } else {
   stop("Must include take covariate. Check clean_crop_dat.R")
 }
-subfolder <- "Spatial"
+
 
 commod_names_c <- unique(dat_orig$commodity_desc)
 commod_names_t <- str_to_title(commod_names_c)
@@ -33,6 +33,7 @@ commod_names <- tolower(commod_names_c)
 beta_list <- re_list<- tau_long_trace <- lscale_long_trace <-
   beta_long_trace <- list()
 if(mod_typ=="spatial"){tau_s_long_trace<-list()}
+
 for(commod_idx in 1:length(commod_names_c)){
   
   ## load samples (only pigs)-----------------
@@ -144,10 +145,13 @@ if(mod_typ=="spatial"){
   tau_s_long_trace_all <- do.call("rbind",tau_s_long_trace)
 }
 
+beta_all$cov[beta_all$cov=="Take per hog intensity 5 yr trend"] <- "Take per wild pig intensity 5 yr trend"
+beta_all$cov[beta_all$cov=="Prop. of county with pigs"] <- "Prop. of county with wild pigs"
+
 beta_all$cov <- factor(beta_all$cov,
                        levels=rev(c("Intercept",
-                                    "Take per hog intensity 5 yr trend",
-                                    "Prop. of county with pigs",
+                                    "Take per wild pig intensity 5 yr trend",
+                                    "Prop. of county with wild pigs",
                                     "Prop. CRP land",
                                     "ROI 5 yr trend",
                                     "Temperature 5 yr trend",
@@ -155,12 +159,15 @@ beta_all$cov <- factor(beta_all$cov,
                                     if(temporal)"Previous year's planting anomaly",
                                     if(nb)"Neighboring planting anomaly")))
 
+
+
 ggplot(beta_all %>% filter(cov!="Intercept"))+
   geom_point(aes(y=cov,x=md,alpha=signif),size=2.5)+
   geom_errorbar(aes(y=cov,xmin=lci,xmax=uci,alpha=signif),width=0,lwd=1)+
   geom_vline(xintercept = 0,col="blue",lty=2)+
   scale_alpha_manual(values=c(0.3,1),name="Significant effect")+
-  ylab("Covariate")+xlab("Coefficient estimate")+
+  ylab("")+
+  xlab("")+
   facet_wrap(.~crop,nrow=1)+
   guides(alpha="none")+
   theme(text=element_text(size=20),
