@@ -141,6 +141,7 @@ if(mod_typ!='spatial'){
 beta_long_trace_all <- do.call("rbind",beta_long_trace)
 tau_long_trace_all <- do.call("rbind",tau_long_trace)
 lscale_long_trace_all <- do.call("rbind",lscale_long_trace)
+
 if(mod_typ=="spatial"){
   tau_s_long_trace_all <- do.call("rbind",tau_s_long_trace)
 }
@@ -174,7 +175,7 @@ ggplot(beta_all %>% filter(cov!="Intercept"))+
         plot.margin = margin(0.5,0.5,0.5,0.5,"cm"))
 ggsave(filename = paste0("./Model outputs/",subfolder,"/Plots/Combined Figures/op_betas_all.jpeg"),
        device = "jpeg",
-       width=14,height=8,units="in")
+       width=14,height=8,units="in",dpi=800)
 
 if(mod_typ!="spatial"){
   ggplot(re_all)+
@@ -193,7 +194,7 @@ if(mod_typ!="spatial"){
           plot.margin = margin(0.5,0.5,0.5,0.5,"cm"))
   ggsave(filename = paste0("./Model outputs/",subfolder,"/Plots/Combined Figures/re_all.jpeg"),
          device = "jpeg",
-         width=14,height=8,units="in")
+         width=14,height=8,units="in",dpi=800)
 }
 
 
@@ -204,7 +205,7 @@ ggplot(tau_long_trace_all)+
   scale_color_discrete(name="chain")+
   theme(text=element_text(size=15))
 ggsave(filename=paste0("./Model outputs/",subfolder,"/Plots/Combined Figures/tau_trace_op_all.jpeg"),
-       device="jpeg",width=14,height=8,units="in")
+       device="jpeg",width=14,height=8,units="in",dpi=800)
 
 if(mod_typ=="spatial"){
   ggplot(tau_s_long_trace_all)+
@@ -214,7 +215,7 @@ if(mod_typ=="spatial"){
     scale_color_discrete(name="chain")+
     theme(text=element_text(size=15))
   ggsave(filename=paste0("./Model outputs/",subfolder,"/Plots/Combined Figures/tau_s_trace_op_all.jpeg"),
-         device="jpeg",width=14,height=8,units="in")
+         device="jpeg",width=14,height=8,units="in",dpi=800)
 }
 
 ggplot(lscale_long_trace_all)+
@@ -224,7 +225,7 @@ ggplot(lscale_long_trace_all)+
   scale_color_discrete(name="chain")+
   theme(text=element_text(size=15))
 ggsave(filename=paste0("./Model outputs/",subfolder,"/Plots/Combined Figures/lscale_trace_op_all.jpeg"),
-       device="jpeg",width=14,height=8,units="in")
+       device="jpeg",width=14,height=8,units="in",dpi=800)
 
 ggplot(beta_long_trace_all %>% filter(beta!="beta[1]"))+
   geom_line(aes(x=samp_idx,y=value,col=factor(chain_idx)))+
@@ -232,4 +233,4 @@ ggplot(beta_long_trace_all %>% filter(beta!="beta[1]"))+
   facet_grid(crop~cov)+
   scale_color_discrete(name="chain")
 ggsave(filename=paste0("./Model outputs/",subfolder,"/Plots/Combined Figures/beta_trace_op_all.jpeg"),
-       device="jpeg",width=17,height=10,units="in")
+       device="jpeg",width=17,height=10,units="in",dpi=800)
