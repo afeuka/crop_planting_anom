@@ -30,7 +30,7 @@ beta_tab <- beta_tab %>% select(-X)
 beta_tab <- beta_tab %>% 
   filter((grepl("pig",cov) & signif==TRUE))
 
-g<-list()
+fun_take_op<-list()
 for(i in 1:nrow(beta_tab)){
   dat_op <- clean_crop_dat(dat_orig=dat,commod_name = tolower(beta_tab$crop[i]),
                            nb=FALSE,
@@ -39,24 +39,24 @@ for(i in 1:nrow(beta_tab)){
   
   load(paste0(model_dir,"/Model outputs/",subfolder,"/",
               tolower(beta_tab$crop[i]),"_op_",mod_typ,".RData"))
-  
+
   beta <- samples_all[,grepl("beta",colnames(samples_all)) &
                         !grepl("beta_county",colnames(samples_all)) &
                         !grepl("beta_region",colnames(samples_all))]
   beta <- cbind(beta,
                 chain_idx=samples_all$chain_idx,
                 samp_idx=samples_all$samp_idx)
-  
+
   beta_long_all <- beta %>%
     pivot_longer(grep("beta",colnames(beta)),values_to="value",names_to="beta")
   beta_long_all$cov <- rep(c("Intercept",dat_op$covsx$name),nrow(beta))
-  
+
   s <- samples_all[,(grepl("s",colnames(samples_all)) | grepl("chain_idx",colnames(samples_all))) &
                      !grepl("lscale",colnames(samples_all)) &
                      !grepl("tau_s",colnames(samples_all))]
   # tau <- samples_all[,"tau"]
-  
-  fun_take_op <- fun_response(dat_df=dat_op$dat_clean,
+
+  fun_take_op[[i]] <- fun_response(dat_df=dat_op$dat_clean,
                               scale_cov_name=dat_op$covsx$cov[dat_op$covsx$name==beta_tab$cov[i]],
                               covsx = dat_op$covsx,
                               beta_long=beta_long_all,
@@ -64,21 +64,81 @@ for(i in 1:nrow(beta_tab)){
                               # tau=tau,
                               x_incr=0.5,
                               spatial=T)
+  
+}
 
-  
-  g[[i]] <- ggplot(fun_take_op)+
-    geom_line(aes(x=cov_bt,y=mn,col=county_idx))+
-    guides(col="none")+
-    xlab(dat_op$covsx$name[dat_op$covsx$name==beta_tab$cov[i]]) +
+g<-list()
+for(i in 1:nrow(beta_tab)){
+  g[[i]] <- ggplot(fun_take_op[[i]])+
+    geom_ribbon(aes(x=cov_bt,ymin=lci,ymax=uci,fill=county_idx),alpha=0.1)+
+    geom_line(aes(x=cov_bt,y=mn,col=county_idx),lwd=1)+
+    guides(fill="none",color="none")+
+    # xlab(dat_op$covsx$name[dat_op$covsx$name==beta_tab$cov[i]]) +
+    xlab("Proportion of county with wild pigs")+
     geom_hline(yintercept=0,lty=2)+
-    ylab("County-level  planting anomaly")+
-    ggtitle(paste("Counties with pigs - ",beta_tab$crop[i]))+
-    theme(text=element_text(size=15))
-  
+    ylab(expression(paste("County-level planting anomaly (km"^"2",")")))+
+    ggtitle(beta_tab$crop[i])+
+    theme(text=element_text(size=15),
+          panel.background = element_blank(),
+          axis.line=element_line(color="grey55"))
 }
 
 cowplot::plot_grid(g[[1]],g[[2]])
 
 
 ggsave(filename=paste0(model_dir,"/Model outputs/",subfolder,"/Plots/Combined Figures/func_response.jpeg"),
-       width=5,height=5,units="in")
+       width=10,height=5,units="in",dpi=800)
+
+#effect size------------
+beta_tab<- read.csv(paste0("C:/Users/Abigail.Feuka/OneDrive - USDA/Feral Hogs/Crops/Model outputs/",
+                           subfolder,"/Plots/Combined Figures/op_betas_all_table.csv"))
+beta_tab <- beta_tab %>% select(-X) 
+beta_tab$cov_sd <- NA
+
+for(i in 1:nrow(beta_tab)){
+  dat_op <- clean_crop_dat(dat_orig=dat,commod_name = tolower(beta_tab$crop[i]),
+                           nb=FALSE,
+                           temporal=TRUE,
+                           only_pigs = T)
+  
+  dat_df <- as.data.frame(dat_op$dat_clean)
+  
+  if(beta_tab$cov[i]!="Intercept"){
+    
+    scale_cov_name <- dat_op$covsx$cov[dat_op$covsx$name==beta_tab$cov[i]]
+    beta_tab$cov_sd[i] <- attr(dat_df[,scale_cov_name], 'scaled:scale')
+    
+  }
+
+}
+
+## proportion of pigs in county
+beta_tab %>% filter(cov=="Prop. of county with pigs") %>% 
+  filter(signif==TRUE) %>% 
+  mutate(cov_eff=md/cov_sd*0.1) #for every 10% change in wild pigs
+
+#temperature 
+beta_tab %>% filter(cov=="Temperature 5 yr trend") %>% 
+  filter(signif==TRUE) %>% 
+  mutate(cov_eff=md/cov_sd) #for every 1 degree increase in 5 year trend
+
+#temperature 
+beta_tab %>% filter(cov=="Precipitation 5 yr trend") %>% 
+  filter(signif==TRUE) %>% 
+  mutate(cov_eff=md/cov_sd*10) #for every 1 cm increase in 5 year trend
+
+#crp
+beta_tab %>% filter(cov=="Prop. CRP land") %>% 
+  filter(signif==TRUE) %>% 
+  mutate(cov_eff=md/cov_sd*0.1) #for every 10% change in crp
+
+#crp
+beta_tab %>% filter(cov=="ROI 5 yr trend") %>% 
+  filter(signif==TRUE) %>% 
+  mutate(cov_eff=md/cov_sd) #for every 1 USD change in r yr trend
+
+#crp
+beta_tab %>% filter(cov=="Previous year's planting anomaly") %>% 
+  filter(signif==TRUE) %>% 
+  mutate(cov_eff=md/cov_sd) #for every 1 USD change in r yr trend
+
