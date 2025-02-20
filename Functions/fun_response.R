@@ -73,6 +73,7 @@ fun_response <- function(dat_df, #dat_clean or dat_clean_op
   est_cov_sc[,1:10,1]
   
   mn = apply(est_cov_sc,c(1,3),mean)
+  md = apply(est_cov_sc,c(1,3),median)
   lci=apply(est_cov_sc,c(1,3),quant_lci)
   uci=apply(est_cov_sc,c(1,3),quant_uci)
   
@@ -81,18 +82,26 @@ fun_response <- function(dat_df, #dat_clean or dat_clean_op
            cov_bt=anom_cov$bt) %>% 
     pivot_longer(cols=all_of(1:length(unique(s_long$county_idx))),
                  values_to="mn",names_to="county_idx")
+  
+  md_long <- md %>% as_data_frame() %>% 
+    mutate(cov_sc=anom_cov$sc,
+           cov_bt=anom_cov$bt) %>% 
+    pivot_longer(cols=all_of(1:length(unique(s_long$county_idx))),
+                 values_to="md",names_to="county_idx")
+  
   lci_long <- lci %>% as_data_frame() %>% 
     mutate(cov_sc=anom_cov$sc,
            cov_bt=anom_cov$bt) %>% 
     pivot_longer(cols=all_of(1:length(unique(s_long$county_idx))),
                  values_to="lci",names_to="county_idx")
+  
   uci_long <- uci %>% as_data_frame() %>% 
     mutate(cov_sc=anom_cov$sc,
            cov_bt=anom_cov$bt) %>% 
     pivot_longer(cols=all_of(1:length(unique(s_long$county_idx))),
                  values_to="uci",names_to="county_idx")
   
-  est_cov_sum <- mn_long %>% left_join(lci_long) %>% left_join(uci_long)
+  est_cov_sum <- mn_long%>% left_join(md_long) %>% left_join(lci_long) %>% left_join(uci_long)
   # est_cov_sum <- cbind.data.frame(anom_cov,est_cov_sum)
   return(est_cov_sum)
 }
