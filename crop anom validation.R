@@ -6,7 +6,7 @@
 library(nimble)
 library(tidyverse)
 
-setwd("C:/Users/Abigail.Feuka/OneDrive - USDA/Feral Hogs/Crops")
+# setwd("C:/Users/Abigail.Feuka/OneDrive - USDA/Feral Hogs/Crops")
 
 source("./crop_planting_anom/Functions/clean_crop_dat.R")
 
@@ -25,6 +25,7 @@ commod_names <- tolower(commod_names_c)
 commod_idx <- 1
 pval <- r2_v <- samp_mn<-samp_sd<- numeric()
 ypred_sum_list <- ypred_stat_list<-list()
+
 for(commod_idx in 1:length(commod_names_c)){
   # all counties-------------
   dat <- clean_crop_dat(dat_orig=dat_orig,
@@ -38,6 +39,8 @@ for(commod_idx in 1:length(commod_names_c)){
     subfolder <- "Take Trend"
   } else if("take.hog.intens.prev.sc"%in%colnames(dat_clean) & mod_typ!="spatial") {
     subfolder <- "Take Previous" 
+  } else if("crp.nfsp.sc"%in%colnames(dat_clean) & mod_typ=="spatial") {
+    subfolder <- "CRPxPigs"
   } else if(mod_typ=="spatial") {
     subfolder <- "Spatial" 
   } else {
@@ -235,12 +238,17 @@ pval_df <- data.frame(Crop=commod_names_t,pval)
 r2_df <- data.frame(Crop=commod_names_t,r2_v)
 fit_df <- pval_df %>% left_join(r2_df)
 
-if(!dir.exists(paste0("C:/Users/Abigail.Feuka/OneDrive - USDA/Feral Hogs/Crops/Model outputs/",
+# if(!dir.exists(paste0("C:/Users/Abigail.Feuka/OneDrive - USDA/Feral Hogs/Crops/Model outputs/",
+#                       subfolder,"/Plots/Combined Figures"))){
+#   dir.create(paste0("C:/Users/Abigail.Feuka/OneDrive - USDA/Feral Hogs/Crops/Model outputs/",
+#                          subfolder,"/Plots/Combined Figures"))
+# }
+if(!dir.exists(paste0("./Model outputs/",
                       subfolder,"/Plots/Combined Figures"))){
-  dir.create(paste0("C:/Users/Abigail.Feuka/OneDrive - USDA/Feral Hogs/Crops/Model outputs/",
-                         subfolder,"/Plots/Combined Figures"))
+  dir.create(paste0("./Model outputs/",
+                    subfolder,"/Plots/Combined Figures"))
 }
-write.csv(fit_df,paste0("C:/Users/Abigail.Feuka/OneDrive - USDA/Feral Hogs/Crops/Model outputs/",
+write.csv(fit_df,paste0("./Model outputs/",
                          subfolder,"/Plots/Combined Figures/pval_r2_table.csv"))
 
 #posterior predictive vs value 
@@ -252,7 +260,7 @@ ggplot()+
   geom_vline(data=samp_mn,aes(xintercept=mn),col="red",lty=2)+
   facet_wrap(.~crop)+
   ggtitle("Posterior data mean - Counties with pigs")
-ggsave(filename=paste0("C:/Users/Abigail.Feuka/OneDrive - USDA/Feral Hogs/Crops/Model outputs/",
+ggsave(filename=paste0("./Model outputs/",
                        subfolder,"/Plots/Combined Figures/pval_mn.jpeg"),
        device="jpeg",width=7,height=5,units="in")
 ggplot()+
@@ -260,7 +268,7 @@ ggplot()+
   geom_vline(data=samp_sd,aes(xintercept=sd),col="red",lty=2)+
   facet_wrap(.~crop)+
   ggtitle("Posterior data SD - Counties with pigs")
-ggsave(filename=paste0("C:/Users/Abigail.Feuka/OneDrive - USDA/Feral Hogs/Crops/Model outputs/",
+ggsave(filename=paste0("./Model outputs/",
                        subfolder,"/Plots/Combined Figures/pval_sd.jpeg"),
        device="jpeg",width=7,height=5,units="in")
 
@@ -274,6 +282,6 @@ ggplot(ypred_sum)+
                                        "Data"))+
   ggtitle("Posterior predictions - Counties with pigs")
 
-ggsave(filename=paste0("C:/Users/Abigail.Feuka/OneDrive - USDA/Feral Hogs/Crops/Model outputs/",
+ggsave(filename=paste0("./Model outputs/",
                        subfolder,"/Plots/Combined Figures/data_post_dist_op.jpeg"),
        device="jpeg",height=5,width=7,units="in")

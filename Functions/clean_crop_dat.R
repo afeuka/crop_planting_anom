@@ -27,6 +27,10 @@ clean_crop_dat <- function(dat_orig, #original data, uncleaned
                             !is.na(GEOID)  &
                             pig.last.year==1) 
   }
+  
+  #crp interaction
+  dat$crp.nfsp <- dat$prop_nfsp * dat$crp_prop
+  dat$crp.nfsp.sc <- scale(dat$crp.nfsp)
 
   covs_all <- data.frame(
     cov=c("plant.anom",
@@ -42,7 +46,8 @@ clean_crop_dat <- function(dat_orig, #original data, uncleaned
           # "take.hog.intens.prev.sc",
           "take.hog.intens.5yeartrend.sc",
           "prop.nfsp.sc",
-          "crp.prop.sc"
+          "crp.prop.sc",
+          "crp.nfsp.sc"
     ),
     name=c("Planting anomaly",
            "County",
@@ -55,9 +60,10 @@ clean_crop_dat <- function(dat_orig, #original data, uncleaned
            if(temporal){"Previous year's planting anomaly"},
            # "Take 5 yr trend",
            # "Take per hog intensity previous year",
-           "Take per hog intensity 5 yr trend",
-           "Prop. of county with pigs",
-           "Prop. CRP land"
+           "Take per wild pig intensity 5 yr trend",
+           "Prop. of county with wild pigs",
+           "Prop. CRP land",
+           "CRP x pigs"
     ))
   # pig_cov_name <- covs_all$name[which(covs_all$cov==paste0(pig_cov,".sc"))]
   

@@ -4,7 +4,7 @@
 ### Notes:
 
 # dat_df <- dat_op$dat_clean
-# scale_cov_name <- "take.hog.intens.5yeartrend.sc"
+# scale_cov_name <- "crp.nfsp.sc"
 # beta_long <- beta_long_all
 # s_long <- s_long_all
 # covsx <- dat_op$covsx
@@ -28,8 +28,26 @@ fun_response <- function(dat_df, #dat_clean or dat_clean_op
   anom_cov$bt <- anom_cov$sc *attr(dat_df[,scale_cov_name], 'scaled:scale') + 
     attr(dat_df[,scale_cov_name], 'scaled:center')
   
+  crp_cov <- data.frame(sc=seq(range(dat_df[,'crp.prop.sc'])[1],
+                                range(dat_df[,'crp.prop.sc'])[2],
+                                length=length(anom_cov$sc)))
+  crp_cov$bt <- crp_cov$sc *attr(dat_df[,'crp.prop.sc'], 'scaled:scale') + 
+    attr(dat_df[,'crp.prop.sc'], 'scaled:center')
+
+  nfsp_cov <- data.frame(sc=seq(range(dat_df[,'prop.nfsp.sc'])[1],
+                               range(dat_df[,'prop.nfsp.sc'])[2],
+                               length=length(anom_cov$sc)))
+  nfsp_cov$bt <- nfsp_cov$sc *attr(dat_df[,'prop.nfsp.sc'], 'scaled:scale') + 
+    attr(dat_df[,'prop.nfsp.sc'], 'scaled:center')
+  
   beta_cov <- beta_long %>% filter(cov==covsx$name[covsx$cov==scale_cov_name]) %>% select(value)
   beta_cov <- unlist(c(beta_cov),use.names = F)
+  
+  beta_crp <- beta_long %>% filter(cov==covsx$name[covsx$cov=='crp.prop.sc']) %>% select(value)
+  beta_crp <- unlist(c(beta_crp),use.names = F)
+  
+  beta_nfsp <- beta_long %>% filter(cov==covsx$name[covsx$cov=='prop.nfsp.sc']) %>% select(value)
+  beta_nfsp <- unlist(c(beta_nfsp),use.names = F)
   
   ncounties <- length(unique(dat_df$GEOID))
   
@@ -50,12 +68,20 @@ fun_response <- function(dat_df, #dat_clean or dat_clean_op
     
     est_cov_sc <- array(NA,dim=c(nrow(anom_cov),length(beta_cov),length(unique(s_long$county_idx))))
  
-    for(i in 1:nrow(s_long)){
-      est_cov_sc[,s_long$tot_idx[i],s_long$county_idx[i]] <- 
-        beta_cov[s_long$tot_idx[i]]*anom_cov$sc + s_long$value[i]
+    if(scale_cov_name!="crp.nfsp.sc"){
+      for(i in 1:nrow(s_long)){
+        est_cov_sc[,s_long$tot_idx[i],s_long$county_idx[i]] <- 
+          beta_cov[s_long$tot_idx[i]]*anom_cov$sc + s_long$value[i]
+      }
+    } else {
+      for(i in 1:nrow(s_long)){
+        est_cov_sc[,s_long$tot_idx[i],s_long$county_idx[i]] <- 
+          beta_crp[s_long$tot_idx[i]]*crp_cov$sc +
+          beta_nfsp[s_long$tot_idx[i]]*nfsp_cov$sc +
+          beta_cov[s_long$tot_idx[i]]*anom_cov$sc + s_long$value[i] 
+      }
     }
 
-    
   } else {
     beta_int <- beta_long %>% filter(cov=="Intercept") %>% select(value)
     beta_int <- unlist(c(beta_int),use.names = F)

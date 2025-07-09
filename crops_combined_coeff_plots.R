@@ -4,7 +4,7 @@
 
 library(tidyverse)
 
-setwd("C:/Users/Abigail.Feuka/OneDrive - USDA/Feral Hogs/Crops")
+# setwd("C:/Users/Abigail.Feuka/OneDrive - USDA/Feral Hogs/Crops")
 
 source("./crop_planting_anom/Functions/clean_crop_dat.R")
 
@@ -15,16 +15,17 @@ nb=FALSE
 temporal=TRUE
 mod_typ <- "spatial"
 
-if("take.hog.intens.5yeartrend.sc"%in%colnames(dat_orig) & mod_typ!="spatial"){
+if("take.hog.intens.5yeartrend.sc"%in%colnames(dat_clean) & mod_typ!="spatial"){
   subfolder <- "Take Trend"
-} else if("take.hog.intens.prev.sc"%in%colnames(dat_orig)& mod_typ!="spatial") {
-  subfolder <- "Take Previous"
-} else if (mod_typ=="spatial") {
+} else if("take.hog.intens.prev.sc"%in%colnames(dat_clean) & mod_typ!="spatial") {
+  subfolder <- "Take Previous" 
+} else if("crp.nfsp.sc"%in%colnames(dat_clean) & mod_typ=="spatial") {
+  subfolder <- "CRPxPigs"
+} else if(mod_typ=="spatial") {
   subfolder <- "Spatial" 
 } else {
   stop("Must include take covariate. Check clean_crop_dat.R")
 }
-
 
 commod_names_c <- unique(dat_orig$commodity_desc)
 commod_names_t <- str_to_title(commod_names_c)
@@ -33,6 +34,8 @@ commod_names <- tolower(commod_names_c)
 beta_list <- re_list<- tau_long_trace <- lscale_long_trace <-
   beta_long_trace <- list()
 if(mod_typ=="spatial"){tau_s_long_trace<-list()}
+
+commod_idx <-1
 
 for(commod_idx in 1:length(commod_names_c)){
   
@@ -58,7 +61,8 @@ for(commod_idx in 1:length(commod_names_c)){
   
   beta_long_all <- beta %>%
     pivot_longer(grep("beta",colnames(beta)),values_to="value",names_to="beta")
-  beta_long_all$cov <- rep(c("Intercept",covsx_op$name),nrow(beta))
+  beta_long_all$cov <- rep(c(#"Intercept",
+                             covsx_op$name),nrow(beta))
   
   # ##fixed effects --------------------------
   beta_sum <- beta_long_all %>%
@@ -114,7 +118,6 @@ for(commod_idx in 1:length(commod_names_c)){
     tau_s_long_trace[[commod_idx]] <- tau_s_long
   }
 
-  
   beta <- samples_all[,grepl("beta",colnames(samples_all)) &
                         !grepl("beta_county",colnames(samples_all)) &
                         !grepl("beta_region",colnames(samples_all))]
@@ -124,13 +127,18 @@ for(commod_idx in 1:length(commod_names_c)){
   
   beta_long_all <- beta %>%
     pivot_longer(grep("beta",colnames(beta)),values_to="value",names_to="beta")
-  beta_long_all$cov <- rep(c("Intercept",covsx_op$name),nrow(beta))
+  beta_long_all$cov <- rep(c(#"Intercept",
+    covsx_op$name),nrow(beta))
   beta_long_all$crop <- commod_names_t[commod_idx]
   beta_long_trace[[commod_idx]] <- beta_long_all
 
 }
 
 beta_all <- do.call("rbind",beta_list)
+beta_all <- beta_all %>% mutate(mn=round(mn,2),
+                                md=round(md,2),
+                                lci=round(lci,2),
+                                uci=round(uci,2))
 write.csv(beta_all,paste0("./Model outputs/",subfolder,"/Plots/Combined Figures/op_betas_all_table.csv"))
 
 if(mod_typ!='spatial'){
@@ -146,19 +154,21 @@ if(mod_typ=="spatial"){
   tau_s_long_trace_all <- do.call("rbind",tau_s_long_trace)
 }
 
-beta_all$cov[beta_all$cov=="Take per hog intensity 5 yr trend"] <- "Take per wild pig intensity 5 yr trend"
-beta_all$cov[beta_all$cov=="Prop. of county with pigs"] <- "Prop. of county with wild pigs"
+# beta_all$cov[beta_all$cov=="Take per hog intensity 5 yr trend"] <- "Take per wild pig intensity 5 yr trend"
+# beta_all$cov[beta_all$cov=="Prop. of county with pigs"] <- "Prop. of county with wild pigs"
 
 beta_all$cov <- factor(beta_all$cov,
-                       levels=rev(c("Intercept",
+                       levels=rev(c(#"Intercept",
                                     "Take per wild pig intensity 5 yr trend",
                                     "Prop. of county with wild pigs",
                                     "Prop. CRP land",
+                                    "CRP x pigs",
                                     "ROI 5 yr trend",
                                     "Temperature 5 yr trend",
                                     "Precipitation 5 yr trend",
                                     if(temporal)"Previous year's planting anomaly",
-                                    if(nb)"Neighboring planting anomaly")))
+                                    if(nb)"Neighboring planting anomaly"))
+                       )
 
 
 

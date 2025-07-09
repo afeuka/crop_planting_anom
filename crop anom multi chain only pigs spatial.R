@@ -10,7 +10,8 @@ library(tigris)
 library(sf)
 options(tigris_use_cache = TRUE)
 
-setwd("C:/Users/Abigail.Feuka/OneDrive - USDA/Feral Hogs/Crops")
+# setwd("C:/Users/Abigail.Feuka/OneDrive - USDA/Feral Hogs/Crops")
+setwd("/Users/afeuka/Desktop/Crops")
 
 source("./crop_planting_anom/Functions/clean_crop_dat.R")
 
@@ -24,13 +25,14 @@ counties <- counties %>% select(GEOID,NAME)
 load("./Data/all_crops_anom_scaled_2023_2009_anom.RData")
 dat_orig <- dat
 
-subfolder <- "Spatial"
+# subfolder <- "Spatial"
+subfolder <- "CRPxPigs"
 
 commod_names_c <- unique(dat_orig$commodity_desc)
 commod_names_t <- str_to_title(commod_names_c)
 commod_names <- tolower(commod_names_c)
 
-commod_idx <-1
+commod_idx <-5
 
 for(commod_idx in 1:length(commod_names_c)){
   # only counties with pigs ----------------------------
@@ -77,7 +79,7 @@ for(commod_idx in 1:length(commod_names_c)){
                                zero_mean = 0)
     
     for(i in 1:nsamp){
-      mu[i] <- inprod(x[i,1:(nbeta-1)], beta[2:nbeta]) + s[county_idx[i]]
+      mu[i] <- inprod(x[i,1:(nbeta)], beta[1:nbeta]) + s[county_idx[i]]
       y[i] ~ dnorm(mu[i],sd=sd)
       ypred[i] ~ dnorm(mu[i],sd=sd)
     }
@@ -102,7 +104,7 @@ for(commod_idx in 1:length(commod_names_c)){
     modDat <- list(y = dat_clean_op$plant.anom,
                    x = xmat)
     
-    nbeta<-ncol(modDat$x)+1
+    nbeta<-ncol(modDat$x)
     
     ##set up mcmc -------------------
     #constants (not dat_cleana, not estimated)
@@ -181,4 +183,3 @@ for(commod_idx in 1:length(commod_names_c)){
                                commod_names[commod_idx],"_op_spatial.RData"))
   rm(samp1,samp2,samp3,parSamples)
 }
-
